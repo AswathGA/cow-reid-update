@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Label-free Cow Re-identification</title>
+<meta name="description" content="Work update: identifying 60 dairy cows across six barn cameras with DINOv3 fingerprints and YOLO, without identity labels.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfaf7; --surface:#ffffff; --ink:#1d1f21; --muted:#5d6166; --line:#e3e0d8;
+  --accent:#2a6fd6; --accent-soft:#e8f0fc; --good:#1f8a5b; --warn:#c9562b; --fig:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15171a; --surface:#1d2024; --ink:#e7e5e0; --muted:#a2a6ab; --line:#33373c;
+    --accent:#77a8f2; --accent-soft:#1f2b3d; --good:#5cc597; --warn:#ec8a63; --fig:#ffffff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15171a; --surface:#1d2024; --ink:#e7e5e0; --muted:#a2a6ab; --line:#33373c;
+  --accent:#77a8f2; --accent-soft:#1f2b3d; --good:#5cc597; --warn:#ec8a63; --fig:#ffffff;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 Inter,system-ui,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+header{padding:64px 0 32px;border-bottom:1px solid var(--line)}
+.kicker{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:clamp(30px,5.5vw,46px);line-height:1.15;margin:10px 0 14px}
+.lede{font-size:18px;color:var(--muted);max-width:700px;margin:0}
+.byline{margin-top:20px;font-size:14px;color:var(--muted)}
+h2{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:27px;margin:56px 0 10px;line-height:1.25}
+h2 .n{color:var(--accent);margin-right:10px}
+h3{font-size:16px;margin:28px 0 6px}
+p{margin:10px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:32px 0 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.stat b{display:block;font-family:"Source Serif 4",Georgia,serif;font-size:30px;font-weight:600;line-height:1.1}
+.stat span{font-size:13.5px;color:var(--muted)}
+.arrow{color:var(--muted);font-size:22px;margin:0 4px}
+figure{margin:24px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+figure img{display:block;width:100%;height:auto;background:var(--fig)}
+figcaption{padding:12px 16px;font-size:14px;color:var(--muted);border-top:1px solid var(--line)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pair figure{margin:0}
+.scroll{max-height:620px;overflow-y:auto}
+.tbl{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:600;font-size:13px;color:var(--muted);background:var(--accent-soft)}
+tr:last-child td{border-bottom:0}
+td.hi{font-weight:600;color:var(--good)}
+.note{background:var(--accent-soft);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;margin:22px 0}
+.warn{border-left-color:var(--warn)}
+ul{padding-left:22px;margin:10px 0}
+li{margin:5px 0}
+footer{margin:72px 0 0;padding:28px 0 48px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+@media (max-width:640px){
+  header{padding-top:40px}
+  .pair{grid-template-columns:1fr}
+  th,td{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">PhD work update · November 2026</div>
+  <h1>Identifying individual dairy cows across six barn cameras without labels</h1>
+  <p class="lede">Can we recognise 60 Holstein cows in a barn day after day using only cameras, with no ear-tag
+  readers and no hand-labelled identities? This page summarises where the work stands.</p>
+  <div class="byline">Aswath Ganapathi Arumugam</div>
+
+  <div class="stats">
+    <div class="stat"><b>0.47 <span class="arrow">→</span> 0.65</b><span>detector mAP@0.5 after fine-tuning on 120 hand-corrected images</span></div>
+    <div class="stat"><b>2,290 <span class="arrow">→</span> 1,020</b><span>identities on an unseen day after label-free fine-tuning (herd: 60)</span></div>
+    <div class="stat"><b>89 %</b><span>of matches correct within one hour on the same camera (manual check)</span></div>
+    <div class="stat"><b>27 <span class="arrow">→</span> 54 %</b><span>correct matches across different cameras</span></div>
+  </div>
+</header>
+
+<h2><span class="n">1</span>Setup</h2>
+<p>A naturally ventilated research barn with <b>60 Holstein cows</b> and <b>six time-synchronised cameras</b>:
+four inside (north, west, east, south), one at the outside feeding area and one in the outside yard.
+Each camera takes a snapshot <b>every 15 minutes</b>, and all six snapshots are taken within about 2 s of each other.
+Two cameras also record 24-hour video. I used two full days: <b>1 Sep</b> and <b>10 Oct 2026</b>.</p>
+
+<figure>
+  <img src="img/fig_overlaps.jpg" alt="Six camera views of the barn with coloured polygons marking regions seen by two cameras" loading="lazy">
+  <figcaption>The six camera views at the same moment. The coloured polygons mark areas that two cameras see at once
+  (16 polygons on 8 camera pairs). The yellow dots are matching points marked by hand.</figcaption>
+</figure>
+
+<h2><span class="n">2</span>Approach</h2>
+<p>The pipeline has two parts. <b>(a)</b> On any day: detect the cows, crop them, compute a DINOv3 embedding
+("fingerprint") for each crop, then group the fingerprints into identities. <b>(b)</b> Fine-tune DINOv3 without any
+identity labels, using pairs whose answer the recording setup already gives:</p>
+<ul>
+  <li><b>Same cow:</b> crops from one video track a few minutes apart; a cow lying still in the same stall in the next snapshot;
+  a single cow seen in the overlap of two cameras at the same moment.</li>
+  <li><b>Different cows:</b> two boxes in the same image, or cows seen at the same moment on cameras that do not overlap.</li>
+</ul>
+<p>Training uses a group-masked InfoNCE loss, so negatives are taken only from pairs known to be different cows.
+The same "cannot be the same cow" rules also act as <b>cannot-link constraints</b> when grouping. The similarity threshold
+is set so that only 1 % of known-different pairs would be merged.</p>
+
+<figure>
+  <img src="img/fig_pipeline.jpg" alt="Pipeline diagram: snapshot, crops, DINOv3, constrained grouping, identities; below, the label-free training pairs" loading="lazy">
+  <figcaption>(a) Identification pipeline. (b) Label-free training from video tracks, still cows, camera overlaps and same-image negatives.</figcaption>
+</figure>
+
+<h2><span class="n">3</span>Cow detection</h2>
+<p>I corrected 1,338 cow boxes on 120 snapshots (20 per camera) by hand and fine-tuned the YOLO11n detector on 90 of them.
+I evaluated on the remaining 30 (329 boxes).</p>
+<div class="tbl"><table>
+  <thead><tr><th>mAP@0.5</th><th>All</th><th>North</th><th>West</th><th>East</th><th>South</th><th>Feeding</th><th>Yard</th></tr></thead>
+  <tbody>
+    <tr><td>Original detector</td><td>0.473</td><td>0.507</td><td>0.569</td><td>0.662</td><td>0.283</td><td>0.523</td><td>0.106</td></tr>
+    <tr><td>Fine-tuned</td><td class="hi">0.654</td><td class="hi">0.636</td><td class="hi">0.720</td><td class="hi">0.778</td><td class="hi">0.529</td><td class="hi">0.751</td><td class="hi">0.424</td></tr>
+  </tbody>
+</table></div>
+<p>Posture (lying/standing) is correct for <b>95 %</b> of the detected cows.</p>
+
+<h2><span class="n">4</span>A surprise: a better detector made video identification worse</h2>
+<p>On 24 hours of video from one camera, an online DINOv3 gallery created <b>382</b> identities with the original detector.
+With the better detector it created <b>634</b>. The new detector finds 56 % more cows, and each extra hard case
+(short, small, moving) starts a new identity. The identities that never match again are seen for a median of only <b>4 s</b>.</p>
+<div class="note">The bottleneck is <i>when</i> a new identity is created, not the detector. This is why I moved to the
+synchronised snapshot pipeline above.</div>
+
+<h2><span class="n">5</span>Identities from the snapshots</h2>
+<p>Evaluated on <b>1 Sep</b>, a day the fine-tuned model never saw during training (about 4,300 cow crops):</p>
+<div class="tbl"><table>
+  <thead><tr><th></th><th>DINOv3 off-the-shelf</th><th>Fine-tuned (label-free)</th></tr></thead>
+  <tbody>
+    <tr><td>Identities at 1 % false-match rate</td><td>2,287</td><td class="hi">1,024</td></tr>
+    <tr><td>Singletons</td><td>1,668</td><td class="hi">318</td></tr>
+    <tr><td>Still-cow pairs kept together</td><td>81 %</td><td class="hi">95 %</td></tr>
+    <tr><td>AUC (same still cow vs. known different)</td><td>0.984</td><td class="hi">0.996</td></tr>
+    <tr><td>Crops in identities seen for ≥ 1 h</td><td>40 %</td><td class="hi">74 %</td></tr>
+  </tbody>
+</table></div>
+
+<div class="pair">
+  <figure>
+    <div class="scroll"><img src="img/fig_ids_baseline.jpg" alt="Largest identities found with off-the-shelf DINOv3" loading="lazy"></div>
+    <figcaption>Largest identities, off-the-shelf DINOv3 (scroll)</figcaption>
+  </figure>
+  <figure>
+    <div class="scroll"><img src="img/fig_ids_finetuned.jpg" alt="Largest identities found with fine-tuned DINOv3" loading="lazy"></div>
+    <figcaption>Largest identities, fine-tuned (scroll). Each row is one identity across the day.</figcaption>
+  </figure>
+</div>
+
+<h2><span class="n">6</span>Manual check</h2>
+<p>Without ground-truth identities, I checked <b>450 pairs</b> by eye, blind to which model produced them.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Correct matches (precision)</th><th>Off-the-shelf</th><th>Fine-tuned</th></tr></thead>
+  <tbody>
+    <tr><td>Same camera, within 1 h</td><td>86 %</td><td class="hi">89 %</td></tr>
+    <tr><td>Same camera, over hours</td><td>47 %</td><td class="hi">53 %</td></tr>
+    <tr><td>Different cameras</td><td>27 %</td><td class="hi">54 %</td></tr>
+    <tr><td>Across days (10 Oct ↔ 1 Sep)</td><td>34 %</td><td class="hi">44 %</td></tr>
+    <tr><td>Overall (weighted)</td><td>55 %</td><td class="hi">60 %</td></tr>
+  </tbody>
+</table></div>
+<p>The fine-tuned model also finds about twice as many correct links (~10,300 vs ~4,900).</p>
+
+<h2><span class="n">7</span>What the fingerprints encode</h2>
+<figure>
+  <img src="img/fig_umap.jpg" alt="UMAP of fingerprints coloured by posture and by camera for three models" loading="lazy">
+  <figcaption>UMAP of the fingerprints, coloured by posture (top) and by camera (bottom). After fine-tuning, resting cows form
+  tight per-stall clusters, but 80 % of each crop's 10 nearest neighbours still come from the same camera (chance: 21 %).</figcaption>
+</figure>
+<div class="note warn"><b>Main open problem:</b> the embeddings are still organised by camera viewpoint and stall more than by
+the individual cow. The method is reliable over short periods on one camera. Matching across cameras and across days is not solved yet.</div>
+
+<h3>Training</h3>
+<figure>
+  <img src="img/fig_loss.jpg" alt="Training loss curves for two label-free fine-tuning runs" loading="lazy">
+  <figcaption>Group InfoNCE loss for the two label-free runs. Run 2 adds cross-camera pairs and viewpoint augmentation.</figcaption>
+</figure>
+
+<h2><span class="n">8</span>Side result: lying behaviour</h2>
+<figure>
+  <img src="img/supp_s2_lying_share.jpg" alt="Share of lying cows per camera and hour on both days" loading="lazy">
+  <figcaption>Share of detected cows lying, per camera and hour of day. It is about 39 % on both days. The inside cameras dip
+  around 08–10 h and 16 h, probably at milking.</figcaption>
+</figure>
+
+<h2><span class="n">9</span>Next steps</h2>
+<ul>
+  <li>Record a full week of snapshots for more cross-camera pairs and a real multi-day test.</li>
+  <li>Use timestamped milking or feeder (RFID) records to link identities to ear tags and get real ground truth.</li>
+  <li>Segment each cow before embedding, so that the stall and background count less.</li>
+  <li>Change when the video gallery creates a new identity, so short and small detections do not each start one.</li>
+</ul>
+
+<footer>
+  Aswath Ganapathi Arumugam · November 2026<br>
+  Tools: YOLO11n (Ultralytics), DINOv3 ViT-B/16, ByteTrack, PyTorch. All numbers are from two recording days and are preliminary.
+</footer>
+
+</div>
+</body>
+</html>
